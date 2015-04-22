@@ -29,6 +29,7 @@ typedef struct{
     FType type;
 } Listener;
 
+void clear();
 void initEngine(int x, int y, int width, int height, Color c, int fps, void (*)());
 void obliterate();
 Color color(int r, int g, int b);

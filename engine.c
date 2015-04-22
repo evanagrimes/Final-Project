@@ -61,7 +61,7 @@ bool stepEngine(){
 void initEngine(int x, int y, int width, int height, Color c, int fps, void (*render)()){
 
     SDL_Init(SDL_INIT_VIDEO);
-    eng.win = SDL_CreateWindow("Hello World", x, y, width, height, 0);
+    eng.win = SDL_CreateWindow("Simple Snake", x, y, width, height, 0);
     eng.renderer = SDL_CreateRenderer(eng.win, -1, SDL_RENDERER_ACCELERATED);
     eng.background = c;
     eng.fps = fps;
