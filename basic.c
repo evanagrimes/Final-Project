@@ -30,7 +30,6 @@
 #define right 79
 #define up 82
 #define down 81
-#define head 0
 
 #define MAX_length 100
 
@@ -52,15 +51,16 @@ int wallypos[512];//holds location information to draw walls
 int length = 0;
 
 //Snake structure
-struct node {
+struct snake{
     int length;
-    int xpos[512];
-    int ypos[512];
-    int xdir[512];
-    int ydir[512];
+    int xpos;
+    int ypos;
+    int xdir;
+    int ydir;
+    struct snake *next;
 };
 
-struct node *snake;
+struct snake *head = NULL;
 
 
 //Function Declarations
@@ -85,11 +85,16 @@ void loadlevel(char *y);//....load the level from command line input
 
 //Functions
 void init_snake(){
-    snake->length = 5;
-    for(int i=snake->length; i>snake->length-5; i--)
-        snake->xpos[i] = -50;
-    snake->xpos[head] = xpos;
-    snake->ypos[head] = ypos;
+    struct snake *cur, *prev, *next, *new_snake;
+    new_snake = malloc(sizeof(struct snake));
+    new_snake->length = 5;
+    while(cur != NULL){
+        cur->xpos = -50;
+        cur = cur->next;
+    }
+    new_snake->xpos = xpos;
+
+    head = new_snake;
 }
 
 void drawlevel(){
@@ -100,69 +105,81 @@ void drawlevel(){
 
 
 void shift(){
-    for(int i=snake->length-1; i > 0; i--){  
-        snake->xpos[i] = snake->xpos[i-1];
-        snake->ypos[i] = snake->ypos[i-1];
+    struct snake *cur, *prev, *next;
+    //    prev = cur->prev;
+    while(cur != NULL){
+        prev = cur;
+        cur = cur->next;    
+        cur->xpos = prev->xpos;
+        cur->ypos = prev->ypos;
     }
 }
 
 void walk(){
+    struct snake *cur, *prev, *next;
     shift();
-    snake->xpos[head] = snake->xpos[head] + snake->xdir[head]*blockwidth;
-    snake->ypos[head] = snake->ypos[head] + snake->ydir[head]*blocklength;
+    head->xpos = head->xpos + head->xdir*blockwidth;
+    head->ypos = head->ypos + head->ydir*blocklength;
 }
 
 
 void addtosnake(){
-    snake->length += 3;
-    for(int i=snake->length; i>snake->length-3; i--)
-        snake->xpos[i] = -50;
-    snake->xpos[snake->length-1] = snake->xpos[snake->length - 2];
-    snake->ypos[snake->length-1] = snake->ypos[snake->length - 2];
+    struct snake *cur, *prev, *next, *new_snake;
+    new_snake = malloc(sizeof(struct snake));
+
+    cur = head -> next;
+    while(cur -> next != NULL)
+        cur = cur -> next;
+    //    snake->length += 3;
+    new_snake->xpos = cur->xpos;
+    new_snake->ypos = cur->ypos;
+    next = new_snake;
 }
 
 void renderBoard(){
+    struct snake *cur,*prev,*next;
     drawlevel();
     drawRect(applecolor, xapple, yapple, applewidth, applelength);
-    drawRect(blockheadcolor, snake->xpos[head], snake->ypos[head], blockwidth, blocklength);
-    for(int i = 1; i < snake->length; i++){
-        drawRect(blockcolor, snake->xpos[i], snake->ypos[i], blockwidth, blocklength);
+    drawRect(blockheadcolor, head->xpos, head->ypos, blockwidth, blocklength);
+    while(cur != NULL){
+        drawRect(blockcolor, cur->xpos, cur->ypos, blockwidth, blocklength);
+        cur = cur-> next;
     }
 }
 
 
 void moveleft(){
-    if(snake->xdir[head] != 1){
-        snake->xdir[head] = -1;
-        snake->ydir[head] = 0;
+    if(head->xdir != 1){
+        head->xdir = -1;
+        head->ydir = 0;
         shift();
         renderBoard();
     }
 }
 
 void moveright(){
-    if(snake->xdir[head] != -1){
+    if(head->xdir != -1){
         shift();
-        snake->xdir[head] = 1;
-        snake->ydir[head] = 0;
+        head->xdir = 1;
+        head->ydir = 0;
         renderBoard();
     }
 }
 
 void moveup(){
-    if(snake->ydir[head] != 1){
+    if(head->ydir != 1){
         shift();
-        snake->xdir[head] = 0;
-        snake->ydir[head] = -1;
+        head->xdir = 0;
+        head->ydir = -1;
         renderBoard();
     }
 }
 
 void movedown(){
-    if(snake->ydir[head] != -1){
+    if(head->ydir != -1){
         shift();
-        snake->xdir[head] = 0;
-        snake->ydir[head] = 1;
+        head->xdir = 0;
+        head->ydir = 1;
         renderBoard();
     }
 }
@@ -175,21 +192,21 @@ bool iswall(){
     for(int i=0; i<length; i++){
         wallpos[wallxpos[i]][wallypos[i]] = 7;
     }
-    if(snake->xpos[head] >= boardwidth - blockwidth)
+    if(head->xpos >= boardwidth - blockwidth)
         return true;
-    if(snake->ypos[head]  >= boardlength - blocklength)
+    if(head->ypos  >= boardlength - blocklength)
         return true;
-    if(snake->xpos[head] <= 0)
+    if(head->xpos <= 0)
         return true;
-    if(snake->ypos[head]  <= 0)
+    if(head->ypos  <= 0)
         return true;
-    if(wallpos[snake->xpos[head]][snake->ypos[head]] == 7)
+    if(wallpos[head->xpos][head->ypos] == 7)
         return true; 
     return false;
 }
 
 bool eatapple(){
-    if(snake->xpos[head] == xapple && snake->ypos[head] == yapple)
+    if(head->xpos == xapple && head->ypos == yapple)
         return true;
     return false;
 }
@@ -213,8 +230,10 @@ void newapple(){
 }
 
 bool eatsnake(){
-    for(int j = 1; j < snake->length; j++){
-        if(snake->xpos[head] == snake->xpos[j] && snake->ypos[head] == snake->ypos[j]){
+    struct snake *cur, *next, *prev;
+    cur = head -> next;
+    for(cur = head->next; cur != NULL; cur = cur->next){
+        if(head->xpos == cur->xpos && head->ypos == cur->ypos){
             return true;
         }
     }
@@ -246,12 +265,6 @@ void loadlevel(char *y){
 
 
 int main(int argc, char *argv[]) {
-    snake = malloc(MAX_length * sizeof(struct node));
-    if (snake == NULL) {
-        printf("Cant allocate enough space.\n");
-        exit(0);
-    }
-
     if(argv[1] != NULL){
         loadlevel(argv[1]);
     }
